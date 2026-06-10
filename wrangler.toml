@@ -1,0 +1,33 @@
+name = "drug-interaction-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "cddf0c9414de448087d8823e36f545e1"
+
+[[kv_namespaces]]
+binding = "USAGE"
+id = "280b569f194548e9b3cf2a809fb63fed"
+
+[vars]
+UPGRADE_URL = "https://drug-interaction-mcp.prakhar-cognizance.workers.dev/upgrade"
+RXNORM_BASE = "https://rxnav.nlm.nih.gov/REST"
+DAILYMED_BASE = "https://dailymed.nlm.nih.gov/dailymed/services/v2"
+PRODUCT_NAME = "drug-interaction-mcp"
+DODO_PRODUCT_ID_SOLO = "pdt_0NgkTw4UcI8CS5xPTNttY"
+DODO_PRODUCT_ID_TEAM = "pdt_0NgkTw6pea744hhNbUG02"
+DODO_PRODUCT_ID_PRO  = "pdt_0NgkTw89GVPiD8C0jX3Mb"
+FROM_EMAIL = "prakshatechnologies@gmail.com"
+DODO_BASE = "https://live.dodopayments.com"
+CUSTOMER_PORTAL_RETURN_URL = "https://drug-interaction-mcp.prakhar-cognizance.workers.dev/account"
+
+# Secrets:
+#   DODO_API_KEY
+#   DODO_WEBHOOK_SECRET
+#   RESEND_API_KEY          (optional)
+#   ADMIN_TOKEN

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://smithery.ai/schema/server.json",
+  "name": "drug-interaction-mcp",
+  "displayName": "Drug Interaction Checker",
+  "description": "Drug-drug interaction checker for clinical LLMs. RxNorm + openFDA + DailyMed. Returns severity, mechanism, citations.",
+  "version": "0.2.0",
+  "license": "MIT",
+  "homepage": "https://drug-interaction-mcp.workers.dev",
+  "categories": ["healthcare", "clinical", "research"],
+  "tags": ["rxnorm", "drug-interaction", "clinical-llm", "ddi", "dailymed", "pharmacology"],
+  "transport": { "type": "http", "url": "https://drug-interaction-mcp.workers.dev/mcp" },
+  "auth": { "type": "bearer", "freeTier": { "monthlyCalls": 50, "ratePerMinute": 10 } },
+  "tools": ["check_interaction", "check_interactions_multi", "normalize_drug_name", "dose_guide", "find_alternatives"],
+  "pricing": { "currency": "USD", "tiers": [
+    { "name": "Free", "price": 0,   "monthlyCalls": 50 },
+    { "name": "Solo", "price": 29,  "monthlyCalls": 1000 },
+    { "name": "Team", "price": 99,  "monthlyCalls": 10000 },
+    { "name": "Pro",  "price": 299, "monthlyCalls": 100000 }
+  ] }
+}
