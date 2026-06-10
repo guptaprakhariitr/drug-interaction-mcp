@@ -27,9 +27,9 @@ for (const t of buildTools()) server.register(t);
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method === "GET" && url.pathname === "/health") return json({ ok: true, server: SERVER_INFO });
+    if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/health") return json({ ok: true, server: SERVER_INFO });
     if (request.method === "GET" && url.pathname === "/llms.txt") return new Response(LLMS_TXT, { headers: { "Content-Type": "text/markdown" } });
-    if (request.method === "GET" && (url.pathname === "/favicon.ico" || url.pathname === "/favicon.svg")) return handleFavicon();
+    if ((request.method === "GET" || request.method === "HEAD") && (url.pathname === "/favicon.ico" || url.pathname === "/favicon.svg")) return handleFavicon();
     if (request.method === "GET" && url.pathname === "/") return new Response(renderLanding(env, url), { headers: { "Content-Type": "text/html" } });
     if (request.method === "GET" && url.pathname === "/upgrade") return handleUpgrade(request, env, new URL(request.url).origin);
     if (request.method === "GET" && url.pathname === "/account") return withCors(await handleAccount(request, env));
@@ -88,7 +88,7 @@ const LLMS_TXT = `# drug-interaction-mcp
 - dose_guide(name)  [premium]
 - find_alternatives(name)  [premium]
 
-Endpoint: https://drug-interaction-mcp.workers.dev/mcp
+Endpoint: https://drug-interaction-mcp.atlasword.workers.dev/mcp
 `;
 function renderLanding(env: Env, url: URL): string {
   const productName = env.PRODUCT_NAME ?? "drug-interaction-mcp";
@@ -100,9 +100,19 @@ function renderLanding(env: Env, url: URL): string {
   });
   void productName; void tagline;
   return `<!doctype html><html><head><meta charset="utf-8"><title>drug-interaction-mcp</title>
-<style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:4rem auto;padding:0 1rem}</style>${meta}
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:4rem auto;padding:0 1rem}code{background:#f3f3f3;padding:.1em .35em;border-radius:3px}pre{background:#1f2328;color:#e6edf3;padding:1rem;border-radius:8px;overflow-x:auto;font-size:.85rem}</style>${meta}
 </head>
 <body><h1>drug-interaction-mcp</h1>
 <p>Drug-drug interaction checker for clinical LLMs. From $29/mo.</p>
+<p>Endpoint: <code>POST https://drug-interaction-mcp.atlasword.workers.dev/mcp</code></p>
+<h2>Install in Cursor / Claude Desktop / Cline</h2>
+<pre><code>{
+  "mcpServers": {
+    "drug-interaction": {
+      "url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
+      "headers": { "Authorization": "Bearer YOUR_KEY" }
+    }
+  }
+}</code></pre>
 <p><strong>Disclaimer:</strong> For clinical decision support only. Prescribing responsibility rests with the licensed clinician.</p></body></html>`;
 }
