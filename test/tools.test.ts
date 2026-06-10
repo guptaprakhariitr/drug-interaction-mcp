@@ -25,9 +25,9 @@ beforeEach(() => {
   (env.CACHE as any).store = new Map();
   vi.stubGlobal("fetch", async (url: string | URL) => {
     const u = typeof url === "string" ? url : url.toString();
-    if (u.endsWith("/rxcui.json?name=warfarin"))   return jr({ idGroup: { rxnormId: ["11289"] } });
-    if (u.endsWith("/rxcui.json?name=aspirin"))    return jr({ idGroup: { rxnormId: ["1191"] } });
-    if (u.endsWith("/rxcui.json?name=tylenol"))    return jr({ idGroup: { rxnormId: ["1093"] } });
+    if (u.includes("/rxcui.json?name=warfarin"))   return jr({ idGroup: { rxnormId: ["11289"] } });
+    if (u.includes("/rxcui.json?name=aspirin"))    return jr({ idGroup: { rxnormId: ["1191"] } });
+    if (u.includes("/rxcui.json?name=tylenol"))    return jr({ idGroup: { rxnormId: ["1093"] } });
     if (u.includes("/rxcui/11289/properties.json"))   return jr({ properties: { name: "warfarin" } });
     if (u.includes("/rxcui/1191/properties.json"))    return jr({ properties: { name: "aspirin" } });
     if (u.includes("/rxcui/1093/properties.json"))    return jr({ properties: { name: "acetaminophen" } });

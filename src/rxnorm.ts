@@ -54,7 +54,10 @@ export class RxNormClient {
   async normalize(name: string): Promise<DrugNorm> {
     const key = `norm:${name.toLowerCase()}`;
     return this.cache.memoize(key, 60 * 60 * 24, async () => {
-      const a: any = await this.get(`/rxcui.json?name=${encodeURIComponent(name)}`);
+      // NLM's RxNorm `rxcui` endpoint requires the `search=2` parameter for
+      // approximate matching of normalized drug names; without it the API
+      // returns HTTP 400 "Path or Query Parameter error" on common brand names.
+      const a: any = await this.get(`/rxcui.json?name=${encodeURIComponent(name)}&search=2`);
       const rxcui = a?.idGroup?.rxnormId?.[0];
       let generic = name;
       let brands: string[] = [];
