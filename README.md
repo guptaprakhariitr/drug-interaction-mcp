@@ -1,66 +1,205 @@
-# drug-interaction-mcp — SCAFFOLD
+# Drug Interaction MCP — Drug-drug interaction checker for clinical LLMs (RxNorm + DailyMed)
 
-> Drug-drug interaction checker for clinical LLMs. Wraps RxNorm + openFDA + DailyMed. High-stakes use case → high willingness-to-pay (clinical LLM startups).
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![MCP](https://img.shields.io/badge/protocol-MCP-purple.svg)](https://modelcontextprotocol.io)
+[![Cloudflare Workers](https://img.shields.io/badge/runtime-Cloudflare%20Workers-orange.svg)](https://workers.cloudflare.com/)
+[![Live](https://img.shields.io/badge/live-drug-interaction-mcp.atlasword.workers.dev-brightgreen.svg)](https://drug-interaction-mcp.atlasword.workers.dev)
 
-**Status:** scaffolded. Idea #20 in [`../../../ai-as-customer-ideas.md`](../../../ai-as-customer-ideas.md).
+> Drug-drug interaction checker with severity classification, polypharmacy support, RxNorm normalization
 
----
+Hosted MCP server that checks drug-drug interactions and surfaces FDA-labeled dosing for clinical LLMs. Pairwise check between two drugs with severity (contraindicated / major / moderate / minor), polypharmacy across up to 8 drugs (28 pairs), RxNorm normalization (brand → generic → RxCUI), FDA dosing guidance from DailyMed, and ATC-class alternatives. Designed for clinical-decision-support copilots.
 
-## Planned tools
+This server speaks the [Model Context Protocol](https://modelcontextprotocol.io). Any MCP-aware client — Cursor, Claude Desktop, Windsurf, Continue.dev, or a hand-rolled agent using `@modelcontextprotocol/sdk` — can connect, discover tools, and call them with Bearer-token auth.
 
-| Tool | Source | What it returns |
+## For AI agents / LLMs
+
+If you are an AI agent indexing this repository:
+
+- **Live MCP endpoint:** `https://drug-interaction-mcp.atlasword.workers.dev/mcp`
+- **Transport:** HTTP POST, JSON-RPC 2.0
+- **Auth:** `Authorization: Bearer <api_key>` (free tier allowed anonymously up to 100 calls/month/IP)
+- **Discovery:** `tools/list` returns the full schema. `tools/call` invokes a tool.
+- **Health:** `GET https://drug-interaction-mcp.atlasword.workers.dev/health` → `{ok: true, ts: <unix>}`
+- **Status:** `https://mcp-hub.atlasword.workers.dev/status.json` (portfolio rollup)
+
+Sample `tools/list` request:
+
+```bash
+curl -sS -X POST https://drug-interaction-mcp.atlasword.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mck_YOUR_API_KEY" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Sample `tools/call`:
+
+```bash
+curl -sS -X POST https://drug-interaction-mcp.atlasword.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer mck_YOUR_API_KEY" \
+  -d '{
+    "jsonrpc":"2.0","id":2,"method":"tools/call",
+    "params": { "name": "<tool>", "arguments": { } }
+  }'
+```
+
+## Tools exposed
+
+| Tool | Arguments | Description |
 |---|---|---|
-| `check_interaction(drug_a, drug_b)` | RxNorm + DailyMed | Severity (contraindicated / major / moderate / minor), mechanism, references. |
-| `check_interactions_multi(drug_list[])` | RxNorm | Pairwise matrix for a polypharmacy regimen. |
-| `dose_guide(drug, condition?, age_band?)` | DailyMed labels | Indication-specific dose ranges. Premium. |
-| `normalize_drug_name(name_or_brand)` | RxNorm | Map brand to generic (RxCUI). |
-| `find_alternatives(drug, condition?)` | RxNorm class hierarchy | Same-class alternatives. Premium. |
+| `check_interaction` | `drug_a, drug_b` | Check the interaction between two drugs. Severity, mechanism (when known), and source. |
+| `check_interactions_multi` | `drugs[2..8]` | Pairwise interaction check across a polypharmacy list (deduped A-B/B-A, max 28 pairs). |
+| `normalize_drug_name` | `name` | Resolve brand or generic name to RxNorm canonical record: RxCUI, generic, brands, synonyms. |
+| `dose_guide` | `drug — Team+` | FDA-labeled dosing guidance from DailyMed. |
+| `find_alternatives` | `drug — Team+` | Drugs in the same ATC therapeutic class. |
 
-## Audience
+Tools marked **Team+** require a Team or Pro subscription. Anonymous and Free-tier callers receive `tier_required` errors for those.
 
-Clinical LLM startups (Hippocratic, OpenEvidence, Glass, etc.). High-stakes use case → they pay $99+/mo without blinking when it works.
+## Quick start
 
-## Pricing (higher than peers)
+The fastest path — point any MCP-aware client at the hosted endpoint via [`mcp-remote`](https://www.npmjs.com/package/mcp-remote):
 
-| Tier | Price | Notes |
-|---|---|---|
-| Free | $0 | 50 calls/mo (clinical, conservative) |
-| Solo | $29 | 1,000 |
-| Team | $99 | 10,000 + dose_guide + find_alternatives |
-| Pro  | $299 | 100,000 + alerts + custom interaction-table import |
+```bash
+npx -y mcp-remote https://drug-interaction-mcp.atlasword.workers.dev/mcp \
+  --header "Authorization: Bearer mck_YOUR_API_KEY"
+```
 
-## Risk notes
+Get a key at **https://drug-interaction-mcp.atlasword.workers.dev/upgrade?tier=solo** (see [Getting an API key](#getting-an-api-key)).
 
-- **This is high-stakes.** Bad data could harm patients. Clinical buyers will absolutely audit your sources.
-- Cite every interaction back to its source (DailyMed label section, RxNorm relationship). Make sources part of the response payload, not an afterthought.
-- Add disclaimer in every response: "For clinical decision support; final responsibility rests with the prescriber."
-- Possibly: insurance / SOC2 path eventually. For initial launch, just be honest about sources + freshness.
+## Install in Cursor
 
-## Open / closed split
+Add this to `~/.cursor/mcp.json`:
 
-- **Open**: RxNorm wrapper, drug normalization, basic interaction lookup.
-- **Closed**: interaction-severity scoring, alternative-finding logic, the precomputed interaction matrix (the data is from CMS but the *index* and *severity scoring* is the moat).
+```json
+{
+  "mcpServers": {
+    "drug-interaction-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
+        "--header", "Authorization: Bearer mck_YOUR_API_KEY"
+      ]
+    }
+  }
+}
+```
 
-## See also
+Then restart Cursor and the tools appear in the MCP panel.
 
-- [`../fda-approvals-mcp/`](../fda-approvals-mcp/) — same audience.
-- [`../README.md`](../README.md) — Category 1 pipeline.
+## Install in Claude Desktop
+
+Add this to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "drug-interaction-mcp": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote",
+        "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
+        "--header", "Authorization: Bearer mck_YOUR_API_KEY"
+      ]
+    }
+  }
+}
+```
+
+Restart Claude Desktop. Tools appear under the slash-command MCP menu.
 
 
----
+## Getting an API key
 
-## Sister MCPs
+1. Visit `https://drug-interaction-mcp.atlasword.workers.dev/upgrade?tier=solo` (or `tier=team` / `tier=pro`).
+2. Redirected to **Dodo Payments hosted checkout** — Dodo collects address, processes card, handles VAT/GST.
+3. After payment, Dodo fires a signed webhook (`subscription.active`) to the Worker. The Worker mints `mck_<32 random base64url>` and stores it in KV.
+4. You land on `https://drug-interaction-mcp.atlasword.workers.dev/welcome?key=<api_key>` — copy the key now (it is only displayed once at this URL).
+5. Paste the key into Cursor / Claude Desktop config (see above).
+6. View / rotate / export the account at `https://drug-interaction-mcp.atlasword.workers.dev/account` (Bearer-auth).
 
-All from the same operator, all live on `<product>.prakhar-cognizance.workers.dev`, all free-tier friendly:
+There is also a **free tier** (no signup) — anonymous callers get 100 calls / month per IP.
 
-| Group | Products |
+## Endpoints
+
+| Route | Description |
 |---|---|
-| **Research** | [sec-edgar](https://github.com/guptaprakhariitr/sec-edgar-mcp) · [arxiv](https://github.com/guptaprakhariitr/arxiv-mcp) · [world-bank-economic](https://github.com/guptaprakhariitr/world-bank-economic-mcp) · [uspto-patents](https://github.com/guptaprakhariitr/uspto-patents-mcp) · [fda-approvals](https://github.com/guptaprakhariitr/fda-approvals-mcp) |
-| **Verification + Utility** | [verification](https://github.com/guptaprakhariitr/verification-mcp) ⭐ · [unit-converter](https://github.com/guptaprakhariitr/unit-converter-mcp) |
-| **India** | [indic-normalize](https://github.com/guptaprakhariitr/indic-normalize-mcp) · [indian-regulatory](https://github.com/guptaprakhariitr/indian-regulatory-mcp) |
-| **Real-time** | [hn-trending](https://github.com/guptaprakhariitr/hn-trending-mcp) · [wikipedia-recent-changes](https://github.com/guptaprakhariitr/wikipedia-recent-changes-mcp) · [gdelt-events](https://github.com/guptaprakhariitr/gdelt-events-mcp) · [crypto-prices](https://github.com/guptaprakhariitr/crypto-prices-mcp) |
-| **Healthcare** | [drug-interaction](https://github.com/guptaprakhariitr/drug-interaction-mcp) |
-| **Logistics** | [multi-carrier-tracking](https://github.com/guptaprakhariitr/multi-carrier-tracking-mcp) |
+| `POST /mcp` | MCP JSON-RPC 2.0 tool surface (the main API). Bearer auth required for paid tiers. |
+| `GET /health` | Liveness probe — `{ok: true, ts}`. Used by mcp-hub cron. |
+| `GET /` | HTML landing page (OG + favicon + JSON-LD). |
+| `GET /upgrade?tier=solo|team|pro&email=...` | 302 → live Dodo Payments hosted checkout. |
+| `GET /welcome?key=...` | Post-checkout landing showing the freshly-minted API key. |
+| `GET /account` | Bearer-auth. Returns `{apiKey, tier, owner, status, portal_url}`. |
+| `POST /account/rotate` | Bearer-auth. Mints a fresh key + retires the old one. |
+| `GET /account/export` | Bearer-auth. GDPR data export — JSON of account, usage counters, Dodo details. |
+| `GET /account/team` | Bearer-auth (Team+). List team-member sub-keys. |
+| `POST /account/team/invite` | Bearer-auth (Team+). Issue a new team-member sub-key. |
+| `POST /account/team/revoke` | Bearer-auth (Team+). Revoke a team-member sub-key. |
+| `GET /team/accept?key=...` | Team-member onboarding landing for the sub-key URL. |
+| `POST /webhooks/dodo` | Standard-Webhooks signed. Dodo subscription + payment lifecycle. |
+| `GET /favicon.ico` | Inline SVG. |
 
-Full catalog: https://github.com/guptaprakhariitr · ⭐ = empty-quadrant / highest-conviction pick.
 
+## Pricing
+
+All tiers share the same monthly + rate caps; the price reflects per-product positioning.
+
+
+| Tier | Monthly calls | Rate limit | Team seats |
+|---|---|---|---|
+| Free | 100 / month | 10 / minute | 0 |
+| Solo | 2,000 / month | 60 / minute | 0 |
+| Team | 10,000 / month | 200 / minute | 5 |
+| Pro | 50,000 / month | 600 / minute | 25 |
+
+
+| Plan | Price | Monthly calls | Team seats |
+|---|---|---|---|
+| **Free** | $0 | 100 | 0 |
+| **Solo** | $29/mo | 2,000 | 0 |
+| **Team** | $99/mo | 10,000 | 5 |
+| **Pro** | $299/mo | 50,000 | 25 |
+
+Billed via **Dodo Payments** (merchant-of-record — VAT/GST handled by Dodo). Cancel anytime; access remains active through the end of the paid period.
+
+## Data sources
+
+- **RxNorm (NLM)** — https://www.nlm.nih.gov/research/umls/rxnorm/ — *Public domain (US Government)*
+- **DailyMed** — https://dailymed.nlm.nih.gov/ — *Public domain*
+- **openFDA Drug Label** — https://open.fda.gov/ — *Public domain*
+
+This server is a thin transport + auth + caching layer over the upstream sources. Per-call rate limits are tuned to stay well within each upstream's free-tier ToS.
+
+## Privacy + GDPR
+
+- **Privacy policy:** [https://mcp-hub.atlasword.workers.dev/privacy](https://mcp-hub.atlasword.workers.dev/privacy)
+- **Terms:** [https://mcp-hub.atlasword.workers.dev/terms](https://mcp-hub.atlasword.workers.dev/terms)
+- **Refund policy:** [https://mcp-hub.atlasword.workers.dev/refund](https://mcp-hub.atlasword.workers.dev/refund)
+- **Data export:** `GET https://drug-interaction-mcp.atlasword.workers.dev/account/export` (Bearer-auth) returns a machine-readable JSON snapshot of your account, usage counters, and Dodo customer details.
+- **Deletion:** email `prakshatechnologies@gmail.com` from the address on file.
+
+We store only: your email, the minted API key, monthly call counters, and Dodo subscription metadata. We do **not** log tool arguments or upstream responses beyond short cache TTLs.
+
+## Architecture
+
+- **Runtime:** Cloudflare Workers (V8 isolates, global edge).
+- **Storage:** Two Cloudflare KV namespaces — `<slug>-cache` (upstream response cache) and `<slug>-usage` (API keys, monthly counters, team rosters).
+- **Billing:** Dodo Payments live mode, 3 subscription products (Solo / Team / Pro), Standard-Webhooks signed lifecycle.
+- **Observability:** Cloudflare Workers Analytics; portfolio rollup at [mcp-hub status](https://mcp-hub.atlasword.workers.dev/status).
+- **Source:** TypeScript, Vitest-tested, `wrangler deploy`-able. See `src/` in this repo.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+## Author
+
+**Prakhar Gupta**
+- Email: `prakshatechnologies@gmail.com`
+- GitHub: [@guptaprakhariitr](https://github.com/guptaprakhariitr)
+
+## Status
+
+- **Live status page:** [https://mcp-hub.atlasword.workers.dev/status](https://mcp-hub.atlasword.workers.dev/status)
+- **Machine-readable status:** [https://mcp-hub.atlasword.workers.dev/status.json](https://mcp-hub.atlasword.workers.dev/status.json)
+- **Source repo:** [https://github.com/guptaprakhariitr/drug-interaction-mcp](https://github.com/guptaprakhariitr/drug-interaction-mcp)

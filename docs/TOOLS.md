@@ -39,7 +39,7 @@ See `src/tools.ts` for the JSON Schema input.
 {
   "mcpServers": {
     "drug-interaction-mcp": {
-      "url": "https://drug-interaction-mcp.prakhar-cognizance.workers.dev/mcp",
+      "url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
       "headers": { "Authorization": "Bearer YOUR_API_KEY" }
     }
   }

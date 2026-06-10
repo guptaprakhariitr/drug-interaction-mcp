@@ -25,7 +25,7 @@ Auto-crawls GitHub by repo topic `mcp-server`. Already tagged. Indexes within 24
 - **Display name:** `Drug Interaction Checker`
 - **Description:** `Drug-drug interaction checker for clinical LLMs. RxNorm + openFDA + DailyMed. Returns severity, mechanism, citations.`
 - **GitHub URL:** `https://github.com/guptaprakhariitr/drug-interaction-mcp`
-- **Endpoint URL:** `https://drug-interaction-mcp.prakhar-cognizance.workers.dev/mcp`
+- **Endpoint URL:** `https://drug-interaction-mcp.atlasword.workers.dev/mcp`
 - **Tags:** rxnorm, drug-interaction, clinical-llm, ddi, dailymed, pharmacology
 - **License:** MIT
 - **Transport:** HTTP (remote)
@@ -50,7 +50,7 @@ Auto-crawls GitHub by repo topic `mcp-server`. Already tagged. Indexes within 24
 ### Twitter / X thread template
 > Just shipped drug-interaction-mcp — Model Context Protocol server: drug-drug interaction checker for clinical llms.
 >
-> Endpoint: https://drug-interaction-mcp.prakhar-cognizance.workers.dev/mcp
+> Endpoint: https://drug-interaction-mcp.atlasword.workers.dev/mcp
 > GitHub: https://github.com/guptaprakhariitr/drug-interaction-mcp
 >
 > Free tier available. Paid from $9/mo.
