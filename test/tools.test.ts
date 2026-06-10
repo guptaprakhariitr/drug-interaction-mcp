@@ -32,7 +32,6 @@ beforeEach(() => {
     if (u.includes("/rxcui/1191/properties.json"))    return jr({ properties: { name: "aspirin" } });
     if (u.includes("/rxcui/1093/properties.json"))    return jr({ properties: { name: "acetaminophen" } });
     if (u.includes("/related.json?tty=BN"))       return jr({ relatedGroup: { conceptGroup: [{ conceptProperties: [{ name: "BrandX" }] }] } });
-    if (u.includes("/related.json?tty=SY"))       return jr({ relatedGroup: { conceptGroup: [{ conceptProperties: [{ name: "Syn1" }, { name: "Syn2" }] }] } });
     if (u.includes("/rxclass/class/byRxcui.json")) return jr({ rxclassDrugInfoList: { rxclassDrugInfo: [{ rxclassMinConceptItem: { classId: "N02BE" } }] } });
     if (u.includes("/rxclass/classMembers.json"))  return jr({ drugMemberGroup: { drugMember: [{ minConcept: { rxcui: "9999", name: "ibuprofen" } }, { minConcept: { rxcui: "1093", name: "acetaminophen" } }] } });
     return jr({});

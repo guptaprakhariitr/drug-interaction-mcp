@@ -57,18 +57,26 @@ export class RxNormClient {
       // NLM's RxNorm `rxcui` endpoint requires the `search=2` parameter for
       // approximate matching of normalized drug names; without it the API
       // returns HTTP 400 "Path or Query Parameter error" on common brand names.
+      // NLM's RxNorm rejects unknown `tty` values with HTTP 400, so each
+      // related-concept fetch is wrapped in try/catch — one bad lookup
+      // shouldn't fail the whole normalize call.
       const a: any = await this.get(`/rxcui.json?name=${encodeURIComponent(name)}&search=2`);
       const rxcui = a?.idGroup?.rxnormId?.[0];
       let generic = name;
       let brands: string[] = [];
-      let synonyms: string[] = [];
+      const synonyms: string[] = [];
       if (rxcui) {
-        const props: any = await this.get(`/rxcui/${rxcui}/properties.json`);
-        generic = props?.properties?.name ?? generic;
-        const rel: any = await this.get(`/rxcui/${rxcui}/related.json?tty=BN`);
-        brands = (rel?.relatedGroup?.conceptGroup?.[0]?.conceptProperties ?? []).map((c: any) => c.name);
-        const syn: any = await this.get(`/rxcui/${rxcui}/related.json?tty=SY`);
-        synonyms = (syn?.relatedGroup?.conceptGroup?.[0]?.conceptProperties ?? []).map((c: any) => c.name);
+        try {
+          const props: any = await this.get(`/rxcui/${rxcui}/properties.json`);
+          generic = props?.properties?.name ?? generic;
+          // The properties payload includes `synonym` directly — no separate
+          // /related?tty=SY call needed (that endpoint 400s on common drugs).
+          if (props?.properties?.synonym) synonyms.push(props.properties.synonym);
+        } catch (e) { console.error("rxnorm properties fetch failed:", e); }
+        try {
+          const rel: any = await this.get(`/rxcui/${rxcui}/related.json?tty=BN`);
+          brands = (rel?.relatedGroup?.conceptGroup?.[0]?.conceptProperties ?? []).map((c: any) => c.name);
+        } catch (e) { console.error("rxnorm BN fetch failed:", e); }
       }
       return { query: name, rxcui, generic_name: generic, brand_names: brands, synonyms };
     });
