@@ -3,7 +3,7 @@
   "name": "io.github.guptaprakhariitr/drug-interaction-mcp",
   "title": "Drug Interaction Checker",
   "description": "Drug-drug interaction checker for clinical LLMs using RxNorm and DailyMed.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "websiteUrl": "https://drug-interaction-mcp.atlasword.workers.dev/",
   "repository": {
     "url": "https://github.com/guptaprakhariitr/drug-interaction-mcp",
@@ -13,16 +13,6 @@
     {
       "type": "streamable-http",
       "url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp"
-    }
-  ],
-  "packages": [
-    {
-      "registryType": "npm",
-      "identifier": "@insnapsprakhar/drug-interaction-mcp",
-      "version": "0.2.0",
-      "transport": {
-        "type": "stdio"
-      }
     }
   ]
 }
