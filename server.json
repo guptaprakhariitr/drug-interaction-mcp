@@ -14,12 +14,12 @@
   },
   "packages": [
     {
-      "registry_name": "remote",
-      "name": "drug-interaction-mcp",
-      "version": "0.2.0",
-      "runtime_hint": "http",
-      "remote_url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
-      "transport_type": "http"
+      "registryType": "npm",
+      "identifier": "@insnapsprakhar/drug-interaction-mcp",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      }
     }
   ],
   "remotes": [
@@ -40,5 +40,6 @@
     "ddi",
     "dailymed",
     "pharmacology"
-  ]
+  ],
+  "version": "0.0.2"
 }
