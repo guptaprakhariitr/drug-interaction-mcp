@@ -1,44 +1,28 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-09-29/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.guptaprakhariitr/drug-interaction-mcp",
-  "description": "Drug-drug interaction checker for clinical LLMs. RxNorm + openFDA + DailyMed. Returns severity, mechanism, citations.",
-  "status": "active",
+  "title": "Drug Interaction Checker",
+  "description": "Drug-drug interaction checker for clinical LLMs using RxNorm and DailyMed.",
+  "version": "0.2.0",
+  "websiteUrl": "https://drug-interaction-mcp.atlasword.workers.dev/",
   "repository": {
     "url": "https://github.com/guptaprakhariitr/drug-interaction-mcp",
     "source": "github"
   },
-  "version_detail": {
-    "version": "0.2.0",
-    "release_date": "2026-06-10T00:00:00Z",
-    "is_latest": true
-  },
-  "packages": [
-    {
-      "registry_name": "remote",
-      "name": "drug-interaction-mcp",
-      "version": "0.2.0",
-      "runtime_hint": "http",
-      "remote_url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp",
-      "transport_type": "http"
-    }
-  ],
   "remotes": [
     {
-      "transport_type": "http",
+      "type": "streamable-http",
       "url": "https://drug-interaction-mcp.atlasword.workers.dev/mcp"
     }
   ],
-  "categories": [
-    "healthcare",
-    "clinical",
-    "research"
-  ],
-  "tags": [
-    "rxnorm",
-    "drug-interaction",
-    "clinical-llm",
-    "ddi",
-    "dailymed",
-    "pharmacology"
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@insnapsprakhar/drug-interaction-mcp",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
   ]
 }
