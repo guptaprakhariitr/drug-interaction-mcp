@@ -203,3 +203,27 @@ MIT — see [LICENSE](LICENSE).
 - **Live status page:** [https://mcp-hub.atlasword.workers.dev/status](https://mcp-hub.atlasword.workers.dev/status)
 - **Machine-readable status:** [https://mcp-hub.atlasword.workers.dev/status.json](https://mcp-hub.atlasword.workers.dev/status.json)
 - **Source repo:** [https://github.com/guptaprakhariitr/drug-interaction-mcp](https://github.com/guptaprakhariitr/drug-interaction-mcp)
+
+
+## Install via npm (one-liner)
+
+A thin launcher is published as [`@atlasword/drug-interaction-mcp`](https://www.npmjs.com/package/@atlasword/drug-interaction-mcp) on npm. No manual URL to copy/paste:
+
+```bash
+npx -y @atlasword/drug-interaction-mcp
+```
+
+Or wire it into your MCP client:
+
+```jsonc
+{
+  "mcpServers": {
+    "drug-interaction": {
+      "command": "npx",
+      "args": ["-y", "@atlasword/drug-interaction-mcp"]
+    }
+  }
+}
+```
+
+The npm package is just a launcher — it shells out to [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) and points it at the hosted endpoint (`https://drug-interaction-mcp.atlasword.workers.dev/mcp`).
